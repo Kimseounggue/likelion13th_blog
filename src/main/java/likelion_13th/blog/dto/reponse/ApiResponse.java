@@ -1,4 +1,4 @@
-package likelion_13th.blog.dto;
+package likelion_13th.blog.dto.reponse;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -3,8 +3,15 @@ package likelion_13th.blog.service;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import likelion_13th.blog.domain.Article;
-import likelion_13th.blog.dto.*;
+import likelion_13th.blog.dto.reponse.ArticleDetailResponse;
+import likelion_13th.blog.dto.reponse.ArticleResponse;
+import likelion_13th.blog.dto.reponse.CommentResponse;
+import likelion_13th.blog.dto.reponse.SimpleArticleResponse;
+import likelion_13th.blog.dto.request.AddArticleRequest;
+import likelion_13th.blog.dto.request.DeleteRequest;
+import likelion_13th.blog.dto.request.UpdateArticleRequest;
 import likelion_13th.blog.repository.ArticleRepository;
+import likelion_13th.blog.repository.CommentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -14,6 +21,29 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ArticleService {
     private final ArticleRepository articleRepository;
+    private final CommentRepository commentRepository;
+
+    //단일 글 조회
+    public ArticleDetailResponse getArticle(Long id){
+         /*1. JPA의 findById()를 사용하여 DB에서 id가 일치하는 게시글 찾기.
+              id가 일치하는 게시글이 DB에 없으면 에러 반환*/
+        Article article=articleRepository.findById(id)
+                .orElseThrow(()-> new EntityNotFoundException("해당 ID의 게시글을 찾을 수 없습니다. ID: "+id));
+
+        /*2. 해당 게시글에 달려있는 댓글들 가져오기*/
+        List<CommentResponse> comments=getCommentList(article);
+
+        //3. ArticleResponse DTO 생성하여 반환
+        return ArticleDetailResponse.of(article,comments);
+    }
+
+    //특정 게시글에 달려있는 댓글목록 가져오기
+    private List<CommentResponse> getCommentList(Article article){
+        return commentRepository.findByArticle(article).stream()
+                .map(comment->CommentResponse.of(comment))
+                .toList();
+    }
+
 
     //게시글 생성
     public ArticleResponse addArticle(AddArticleRequest request){
@@ -28,7 +58,6 @@ public class ArticleService {
         return ArticleResponse.of(article);
     }
 
-
     //전체 글 조회
     public List<SimpleArticleResponse> getAllArticles(){
         /*1. JPA의 findAll() 을 사용하여 DB에 저장된 전체 Article을 List 형태로 가져오기*/
@@ -42,20 +71,6 @@ public class ArticleService {
         /*3. articleResponseList (DTO 리스트) 반환 */
         return articleResponseList;
     }
-
-
-
-    //단일 글 조회
-    public ArticleResponse getArticle(Long id){
-         /*1. JPA의 findById()를 사용하여 DB에서 id가 일치하는 게시글 찾기.
-              id가 일치하는 게시글이 DB에 없으면 에러 반환*/
-        Article article=articleRepository.findById(id)
-                .orElseThrow(()-> new EntityNotFoundException("해당 ID의 게시글을 찾을 수 없습니다. ID: "+id));
-
-        //2. ArticleResponse DTO 생성하여 반환
-        return ArticleResponse.of(article);
-    }
-
 
 
 
@@ -77,9 +92,10 @@ public class ArticleService {
 
         /*3. 게시글 수정 후 저장 */
         article.update(request.getTitle(),request.getContent());
-        articleRepository.save(article);
 
-        return null;
+        /* ArticleResponse로 변환해서 리턴 */
+        return ArticleResponse.of(article);
+
     }
 
     //글 삭제
