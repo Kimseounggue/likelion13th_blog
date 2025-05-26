@@ -20,7 +20,7 @@ public class AddArticleRequest {
         return Article.builder()
                 .title(title)
                 .content(content)
-                .author(author)
+                .author(author)x`
                 .password(password)
                 .createdAt(LocalDateTime.now())
                 .build();
